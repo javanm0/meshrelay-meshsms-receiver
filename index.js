@@ -32,49 +32,6 @@ const SMS = mongoose.model('SMS', messageSchema);
 
 app.use(express.json());
 
-// Endpoint to handle incoming SMS
-app.post('/api/sms-receiver', async (req, res) => {
-  const messageBody = req.body.Body;
-  const phoneNumber = req.body.From;
-
-  // Extract node_id from the message
-  const nodeIdMatch = messageBody.match(/\b\d{9,10}\b/); // Adjusted regex to match 9 or 10 digit numbers
-  const node_id = nodeIdMatch ? nodeIdMatch[0] : null;
-  const message = nodeIdMatch ? messageBody.replace(nodeIdMatch[0], '').trim() : messageBody;
-
-  console.log('Received message:', messageBody);
-  console.log('Extracted node_id:', node_id);
-
-  if (!node_id) {
-    console.log('No node_id found in the message:', messageBody);
-    return res.sendStatus(200); // Send a 200 OK response without any content
-  }
-
-  const messageData = {
-    _id: req.body.MessageSid,
-    node_id: node_id,
-    message: message,
-    timestamp: new Date(),
-    phoneNumber: phoneNumber,
-    messageSent: false
-  };
-
-  if (phoneNumber === process.env.SENDER_PHONE_NUMBER) {
-    console.log(`Message from ${process.env.SENDER_PHONE_NUMBER}, not saving to MongoDB`);
-    return res.sendStatus(200); // Send a 200 OK response without any content
-  }
-
-  try {
-    const newMessage = new SMS(messageData);
-    await newMessage.save();
-    console.log(`Message with ID ${messageData._id} saved to MongoDB`);
-  } catch (error) {
-    console.error('Error saving message to MongoDB:', error);
-  }
-
-  res.sendStatus(200); // Send a 200 OK response without any content
-});
-
 // Function to fetch messages from Twilio
 async function fetchMessages() {
   try {
